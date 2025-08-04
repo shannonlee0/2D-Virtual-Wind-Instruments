@@ -3,16 +3,26 @@
 <html>
     <head>
         <title>WebGL Simple Triangle</title>
+        <style>
+            body {
+            background-color: white;
+            }
+        </style>
     </head>
     <body>
-        <canvas id="game-surface" width="600" height="600">
+        <canvas id="simulation-surface" width="1200" height="600">
             Your browser doesn't support HTML5
-        </canvas>
-        <i>click and drag to draw. z to undo. return to restart. r to flash colors</i>
-        <script src="js/utils.js"></script>
-        <script src="js/grid.js"></script>
-        <script src="js/scene.js"></script>
-        <script src="js/input.js"></script>
-        <script src="js/renderer.js"></script>
+        </canvas> 
+        <script src="../js/(1)utils.js"></script>
+        <script src="../js/(2)grid.js"></script>
+        <button type="button" id="playButton" onclick="scene.play = !scene.play">play (space)</button>
+        <button type="button" id="resetButton" onclick="scene.reset();">reset (enter)</button>
+        
+        <script src="../js/(3)scene.js"></script>
+        <script src="../js/(4)renderer.js"></script>
+        <script src="../js/(5)input.js"></script>
+        <script>console.log(scene); update();</script>
+        <script src="../js/(6)audio.js"></script>
+        <button type="button" id="audioButton" onclick="toggleAudio();">play audio</button>
     </body>
 </html>
