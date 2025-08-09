@@ -1,4 +1,5 @@
 function toClipCoords(val, axis) {
+    // takes in pixel coordinates, converts to clip coordinates
     let clip;
     switch (axis) {
         case "x":
@@ -12,20 +13,21 @@ function toClipCoords(val, axis) {
     return clip;
 }
 
-function findCell() {
+function findCell(grid) {
+    // returns the ij-coordinates of cell clicked
     const clipX = ((event.clientX - rect.left) / canvas.width) * 2 - 1;
     const clipY = -(((event.clientY - rect.top) / canvas.height) * 2 - 1);
 
-    const i = upperGridIndex(clipY);
-    const j = lowerGridIndex(clipX);
+    const i = upperGridIndex(clipY, grid);
+    const j = lowerGridIndex(clipX, grid);
 
     return [i, j];
 }
 
-function lowerGridIndex(value) {
+function lowerGridIndex(value, grid) {
     // returns array item "left" of value on number line
     // use to get i-coordinate of cell
-    const arr = horizontalCoords();
+    const arr = horizontalCoords(grid);
     let diff = 2;
     let lower = 0;
     for (let i = 0; i < arr.length; i++) {
@@ -37,10 +39,10 @@ function lowerGridIndex(value) {
     return lower;
 }
 
-function upperGridIndex(value) {
+function upperGridIndex(value, grid) {
     // returns array item "above" value on number line
     // use to get j-coordinate of cell
-    const arr = verticalCoords();
+    const arr = verticalCoords(grid);
     let diff = 2;
     let lower = 0;
     for (let i = 0; i < arr.length; i++) {
@@ -52,49 +54,37 @@ function upperGridIndex(value) {
     return lower;
 }
 
-function verticalCoords() {
+function verticalCoords(grid) {
+    // get vertical grid coordinate values
+    const height = grid.height;
     let vCoords = [];
-    const vIndent = (rect.bottom - rect.top) / gridHeight;
-    for (let i = 0; i < gridHeight + 1; i++) {
+    const vIndent = (rect.bottom - rect.top) / height;
+    for (let i = 0; i < height + 1; i++) {
         vCoords.push(toClipCoords(rect.top + vIndent * i, "y"));
     }
     return vCoords;
 }
 
-function horizontalCoords() {
+function horizontalCoords(grid) {
+    // get horizontal grid coordinate values
+    const width = grid.width;
     let hCoords = [];
-    const hIndent = (rect.right - rect.left) / gridWidth;
-    for (let i = 0; i < gridWidth + 1; i++) {
+    const hIndent = (rect.right - rect.left) / width;
+    for (let i = 0; i < width + 1; i++) {
         hCoords.push(toClipCoords(rect.left + hIndent * i, "x"));
     }
     return hCoords;
 }
 
-function pressureToColor(cellPressure) {
-    // not normalized yet, pressure = beta rn
-    beta = cellPressure;
-    // blue = [0, 0, 1]
-    // white = [1, 1, 1]
-    // red = [1, 0, 0]
-    // beta is normalized pressure value, -1 to 1
-    // if beta is negative: [beta+1, beta+1, 1]
-    // if beta is positive: [1, 1-beta, 1-beta]
-
-    // if (beta <= 0) {
-    //     return [beta + 1, beta + 1, 1];
-    // }
-    // return [1, 1 - beta, 1 - beta];
-
-    // blue = [0, 0, 1]
-    // black = [0, 0, 0]
-    // red = [1, 0, 0]
-
-    if (beta <= 0) {
-        return [0, 0, -beta];
+function pressureToColor(pressure) {
+    // pressure ∈ [-1, 1]
+    if (pressure <= 0) {
+        return [0, 0, -pressure];
     }
-    return [beta, 0, 0];
+    return [pressure, 0, 0];
 }
 
 function getLabel(index, thickness) {
+    // created as a helper to get damping values
     return (-1 * Math.abs(index - thickness)) + thickness;
 }

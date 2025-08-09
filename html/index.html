@@ -13,16 +13,19 @@
         <canvas id="simulation-surface" width="1200" height="600">
             Your browser doesn't support HTML5
         </canvas> 
+        <!-- <canvas id="reed-surface" width="360" height="180"></canvas> -->
         <script src="../js/(1)utils.js"></script>
         <script src="../js/(2)grid.js"></script>
         <button type="button" id="playButton" onclick="scene.play = !scene.play">play (space)</button>
         <button type="button" id="resetButton" onclick="scene.reset();">reset (enter)</button>
-        
         <script src="../js/(3)scene.js"></script>
         <script src="../js/(4)renderer.js"></script>
+        <input type="range" min="0" max="5" value="1" step="0.2" class="slider" id="ampSlider">amplitude</input>
+        <input type="range" min="200" max="700" value="440" step="10" class="slider" id="freqSlider">frequency</input>
         <script src="../js/(5)input.js"></script>
         <script>console.log(scene); update();</script>
         <script src="../js/(6)audio.js"></script>
         <button type="button" id="audioButton" onclick="toggleAudio();">play audio</button>
+        
     </body>
 </html>

@@ -1,5 +1,18 @@
-let dragging = false;
+let draggingInstrument = false;
+let draggingMic = false;
+let draggingSource = false;
+
 let moves = [];
+
+const ampSlider = document.getElementById("ampSlider");
+ampSlider.addEventListener("input", () => {
+    amp = ampSlider.value;
+})
+
+const freqSlider = document.getElementById("freqSlider");
+freqSlider.addEventListener("input", () => {
+    freq = freqSlider.value;
+})
 
 canvas.addEventListener("keydown", function (event) {
     // restart
@@ -21,17 +34,43 @@ canvas.addEventListener("keydown", function (event) {
 
 // create instrument geometry
 canvas.addEventListener("mousedown", function (event) {
-    console.log("mousedown");
-    dragging = true;
-    scene.drawInstrument(findCell()[0], findCell()[1]);
+    const [i, j] = [findCell(scene)[0], findCell(scene)[1]];
+    if (i == mic.i && j == mic.j) {
+        console.log("mic contact");
+        draggingMic = true;
+    }
+    else if (i == source.i && j == source.j) {
+        console.log("source contact");
+        draggingSource = true;
+        
+    }
+    else {
+        draggingInstrument = true;
+        scene.drawInstrument(i, j);
+    }
 });
 
 canvas.addEventListener("mousemove", function (event) {
-    if (dragging) {
-        scene.drawInstrument(findCell()[0], findCell()[1]);
+    const [i, j] = [findCell(scene)[0], findCell(scene)[1]];
+    if (draggingMic) {
+        mic = {
+            i: i,
+            j: j
+        }
+    }
+    else if (draggingSource) {
+        source = {
+            i: i, 
+            j: j
+        }
+    }
+    else if (draggingInstrument) {
+        scene.drawInstrument(i, j);
     }
 });
 
 canvas.addEventListener("mouseup", function (event) {
-    dragging = false;
+    draggingInstrument = false;
+    draggingMic = false;
+    draggingSource = false;
 });

@@ -4,17 +4,12 @@ var workletText = `
 class AudioProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
-        this.recordedPressure = 0;
-        this.smoothedPressure = 0;
-        this.phase = 0;
-        this.sampleRate = 44800;
+        this.sampleRate = 1 / dt;
 
         // event.data is the message sent
         this.port.onmessage = (event) => {
-            this.recordedPressure = event.data.pressure
+            this.pressure = event.data.pressure
         };
-        // constructs fs
-        this.logged = false;
     }
     
     process(inputs, outputs, parameters) {
@@ -26,12 +21,6 @@ class AudioProcessor extends AudioWorkletProcessor {
 
         const output = outputs[0];
 
-        // to prevent clicks, smooth amplitude and generate sine wave
-        const dt = 1.0 / this.sampleRate;
-        // zhehao has 0.1
-        const smoothing = 0.01
-
-
         // for each channel
         // why plus plus i ??
         for (let channel = 0; channel < output.length; ++channel) {
@@ -39,17 +28,7 @@ class AudioProcessor extends AudioWorkletProcessor {
 
             // length of output is 128 samples per call to process()
             for (let i = 0; i < outputChannel.length; ++i) {
-                let sample = 0.0;
-                this.smoothedPressure += smoothing * (this.recordedPressure - this.smoothedPressure);
-                sample = Math.sin(this.phase) * this.smoothedPressure;
-
-                outputChannel[i] = sample;
-                console.log("sample:", sample);
-
-                this.phase += dt * 2 * Math.PI * 440;
-                if (this.phase > 2 * Math.PI) {
-                    this.phase -= 2 * Math.PI;
-                }
+                outputChannel[i] = this.pressure;
             }
         }
         return true;
@@ -98,11 +77,11 @@ async function initializeAudio() {
         let pressure = 0;
         setInterval(() => {
             // get pressure at mic location, apparently that's all that's needed?
-            const micLocation = {
-                i: 100,
-                j: 200
-            };
-            pressure = scene.p[micLocation["i"]][micLocation["j"]];
+            // const mic = {
+            //     i: 100,
+            //     j: 200
+            // };
+            pressure = scene.p[mic["i"]][mic["j"]];
             workletNode.port.postMessage({
                 type: "updateScene",
                 pressure: pressure});

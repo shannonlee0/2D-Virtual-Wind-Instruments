@@ -93,7 +93,7 @@ function draw() {
     // draws whole grid, takes in array
     // [x1, y1, R1, G1, B1, ..., xn, yn, Rn, Gn, Bn]
     // where n = number of vertices = gridHeight * gridWidth * 6
-    let vertices = getVertices(scene.coordinates, scene.color);
+    let vertices = getVertices(scene.coordinates, scene.color, scene);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
@@ -122,5 +122,5 @@ function draw() {
     gl.enableVertexAttribArray(colorAttribLocation);
 
     gl.useProgram(program);
-    gl.drawArrays(gl.TRIANGLES, 0, 6 * gridWidth * gridHeight);
+    gl.drawArrays(gl.TRIANGLES, 0, 6 * scene.height * scene.width);
 }
