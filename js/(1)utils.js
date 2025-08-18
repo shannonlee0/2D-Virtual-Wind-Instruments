@@ -1,3 +1,5 @@
+let moves = [];
+
 function toClipCoords(val, axis) {
     // takes in pixel coordinates, converts to clip coordinates
     let clip;
@@ -77,14 +79,59 @@ function horizontalCoords(grid) {
 }
 
 function pressureToColor(pressure) {
-    // pressure ∈ [-1, 1]
-    if (pressure <= 0) {
-        return [0, 0, -pressure];
+    // given pressure, normalize st beta E [-1, 1]
+    // i dont know what pmax should be
+    const pmax = 1;
+    const beta = pressure / pmax;
+    if (beta <= 0) {
+        return [0, 0, -beta];
     }
-    return [pressure, 0, 0];
+    return [beta, 0, 0];
 }
 
 function getLabel(index, thickness) {
     // created as a helper to get damping values
     return (-1 * Math.abs(index - thickness)) + thickness;
+}
+
+function writeMicValues(length) {
+    // writes mic values as a .txt file to feed into write_wav.py
+    if (scene.frame == length) {
+        const text = (1 / dt) + "\n" + micValues.join("\n");
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "micValues.txt";
+        link.click();
+    }
+}
+
+function getColor(choice) {
+    let color;
+    switch (choice) {
+        case "white":
+            color = [1, 1, 1];
+            break;
+        case "black":
+            color = [0, 0, 0];
+            break;
+        case "yellow":
+            color = [1, 1, 0];
+            break;
+        case "orange":
+            color = [1, 0.8, 0];
+            break;
+        case "green":
+            color = [0, 1, 0];
+            break;
+        case "grey":
+            color = [0.1, 0.1, 0.1];
+            break;
+        default:
+            color = choice;
+            break;
+    }
+    return color;
 }

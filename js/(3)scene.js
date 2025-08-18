@@ -1,5 +1,6 @@
 let amp = 1;
 let freq = 440;
+let pm = 3000;
 
 // re-render every n = numSteps steps
 const numSteps = 100;
@@ -14,6 +15,18 @@ const gl = getWebGL(canvas);
     
 let scene = new Grid(gridHeight, gridWidth);
 
+// source location (top)
+let source = {
+    i: Math.trunc(gridHeight / 2),
+    j: Math.trunc(gridWidth / 4) + 1,
+    height: 10
+}
+
+// microphone location
+let mic = {
+    i: Math.trunc(source.i),
+    j: Math.trunc(source.j + 79)
+}
 
 function getWebGL(canvas) {
     var gl = canvas.getContext('webgl');
@@ -32,30 +45,24 @@ function getWebGL(canvas) {
 function simulate() {
     if (scene.play) {
         for (let i = 0; i < numSteps; i++) {
-            // apply source
-            scene.p[source.i][source.j] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
-            
-            // step pressure and velocity
-            scene.step();
+            scene.getDamping(pmlThicknessInstrument);
 
+            // step values
+            // note: put source application after stepping the value to be overwritten
+            scene.applyClarinet(source.i, source.j);
+            scene.stepPressure();
+            
+            scene.stepVelocity();
+            
+            
             // get microphone values
             let value = scene.p[mic.i][mic.j]
             micValues.push(value);
+            scene.frame++
         }
     }
 
-    // length of micValues .txt file
-    const length = 80000
-    if (scene.frame == length) {
-        const text = (1 / dt) + "\n" + micValues.join("\n");
-        const blob = new Blob([text], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "micValues.txt";
-        link.click();
-    }
+    writeMicValues(4000);
 }
 
 function update() {
@@ -63,17 +70,23 @@ function update() {
 
     // update colors before draw
     scene.mapPressure();
-    const green = [0, 255, 0];
-    const yellow = [255, 50, 0];
-    scene.colorCell(mic.i, mic.j, green);
-    scene.colorCell(source.i, source.j, yellow);
+    scene.colorConstants(mic, source);
 
     draw();
 
     if (scene.play) {
         console.log("frame:", scene.frame);
     }
+    
     canvas.focus();
-
     requestAnimationFrame(update);
+}
+
+function clarinet() {
+    // hard coding geometry
+    // bore
+    for (let j = 0; j < 80; j++) {
+        scene.drawInstrument(source.i - 1, source.j + j);
+        scene.drawInstrument(source.i + source.height, source.j + j);
+    }
 }

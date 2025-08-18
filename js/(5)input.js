@@ -1,8 +1,12 @@
 let draggingInstrument = false;
 let draggingMic = false;
 let draggingSource = false;
+let hatch = false;
+let draggingToneholes = false;
 
-let moves = [];
+let mouseI = 0;
+let mouseJ = 0;
+let length = 0;
 
 const ampSlider = document.getElementById("ampSlider");
 ampSlider.addEventListener("input", () => {
@@ -12,6 +16,12 @@ ampSlider.addEventListener("input", () => {
 const freqSlider = document.getElementById("freqSlider");
 freqSlider.addEventListener("input", () => {
     freq = freqSlider.value;
+})
+
+const pmSlider = document.getElementById("pmSlider");
+pmSlider.addEventListener("input", () => {
+    pm = pmSlider.value;
+    console.log("pm:", pm);
 })
 
 canvas.addEventListener("keydown", function (event) {
@@ -28,44 +38,77 @@ canvas.addEventListener("keydown", function (event) {
 
     // play/pause
     if (event.code === "Space") {
-        scene.play = !scene.play
+        scene.play = !scene.play;
+    }
+
+    // cross-hatch
+    if (event.code == "KeyF") {
+        hatch = !hatch;
+    }
+
+    // toggle toneholes
+    if (event.code.startsWith("Digit")) {
+        const num = parseInt(event.code.replace("Digit", ""), 10);
+        if (num <= scene.toneholes.length) {
+            scene.toggleTonehole(num);
+        } 
     }
 });
 
 // create instrument geometry
 canvas.addEventListener("mousedown", function (event) {
-    const [i, j] = [findCell(scene)[0], findCell(scene)[1]];
-    if (i == mic.i && j == mic.j) {
+    if (event.shiftKey && scene.geometry[mouseI][mouseJ]) {
+        draggingToneholes = true;
+        scene.drawToneholes(mouseI, mouseJ);
+        hole = {
+            i: mouseI, 
+            j: mouseJ,
+            length: 0,
+            open: false
+        }
+    }
+    else if (mouseI == mic.i && mouseJ == mic.j) {
         console.log("mic contact");
         draggingMic = true;
     }
-    else if (i == source.i && j == source.j) {
+    else if (mouseI >= source.i && mouseI <= source.i + source.height && mouseJ == source.j) {
         console.log("source contact");
         draggingSource = true;
         
     }
     else {
         draggingInstrument = true;
-        scene.drawInstrument(i, j);
+        scene.drawInstrument(mouseI, mouseJ);
     }
 });
 
 canvas.addEventListener("mousemove", function (event) {
-    const [i, j] = [findCell(scene)[0], findCell(scene)[1]];
+    mouseI = findCell(scene)[0];
+    mouseJ = findCell(scene)[1];
     if (draggingMic) {
         mic = {
-            i: i,
-            j: j
+            i: mouseI,
+            j: mouseJ
         }
     }
     else if (draggingSource) {
         source = {
-            i: i, 
-            j: j
+            i: mouseI, 
+            j: mouseJ,
+            height: source.height
         }
     }
     else if (draggingInstrument) {
-        scene.drawInstrument(i, j);
+        scene.drawInstrument(mouseI, mouseJ);
+    }
+    else if (draggingToneholes) {
+        scene.drawToneholes(mouseI, mouseJ);
+        if (scene.geometry[mouseI][mouseJ]) {
+            length = mouseJ - hole.j;
+        }
+    }
+    else if (hatch) {
+        scene.crossHatch(mouseI, mouseJ);
     }
 });
 
@@ -73,4 +116,11 @@ canvas.addEventListener("mouseup", function (event) {
     draggingInstrument = false;
     draggingMic = false;
     draggingSource = false;
+
+    if (draggingToneholes) {
+        hole.length = length;
+        scene.toneholes.push(hole);
+        draggingToneholes = false;
+        console.log(scene.toneholes);
+    }
 });

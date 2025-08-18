@@ -1,3 +1,5 @@
+//
+
 // resolution 1 is 110 x 220
 const resolution = 1;
 const gridHeight = 110 * resolution;
@@ -10,18 +12,6 @@ const dx = 0.00383;
 
 const pmlThicknessBoundary = 10 * resolution;
 const pmlThicknessInstrument = 0;
-
-// source location
-let source = {
-    i: Math.trunc(gridHeight / 2),
-    j: Math.trunc(gridWidth / 4)
-}
-
-// microphone location
-let mic = {
-    i: Math.trunc(25 * resolution),
-    j: Math.trunc(50 * resolution)
-}
 
 class Grid {
     constructor(height, width) {
@@ -39,46 +29,62 @@ class Grid {
         this.vx = values["velocityX"];
         this.vy = values["velocityY"];
 
+        // initialize geometry booleans
         this.geometry = initializeGeometry(this);
 
+        // set up damping coefficients
         this.damping = initializeDamping(this);
         this.getDamping(pmlThicknessBoundary);
-        
+
+        // array of {key=i: value=leftmost i-coord, key=j: value=leftmost j-coord, key=length, value=length of tonehole}
+        this.toneholes = [];
+
         this.play = false;
         this.frame = 0;
     }
 
     stepPressure() {
+        // adjust bounds to account for ghost cells
         for (let i = 1; i < this.height - 1; i++) {
             for (let j = 1; j < this.width - 1; j++) {
-                let div_v = (this.vx[i + 1][j] - this.vx[i][j] + this.vy[i][j + 1] - this.vy[i][j]) / dx
+                let div_v = (this.vx[i][j] - this.vx[i][j - 1] + this.vy[i][j] - this.vy[i - 1][j]) / dx
                 if (!this.geometry[i][j]) {
                     this.p[i][j] = ((-RHO * C * C * div_v * dt) + this.p[i][j]) / (1 + this.damping[i][j]);
                 }
             }
         }
     }
-
+    
     stepVelocity() {
+        // adjust bounds to account for ghost cells and extra cell due to staggered grid
+        // vx
         for (let i = 1; i < this.height - 1; i++) {
-            for (let j = 1; j < this.width - 1; j++) {
-                let grad_p_x = (this.p[i][j] - this.p[i-1][j]) / dx
-                let grad_p_y = (this.p[i][j] - this.p[i][j-1]) / dx
-
+            for (let j = 0; j < this.width - 1; j++) {
+                // ?
+                let grad_p_x = (this.p[i][j + 1] - this.p[i][j]) / dx
                 this.vx[i][j] = (-1 / RHO * dt * grad_p_x + this.vx[i][j]) / (1 + this.damping[i][j]);
+            }
+        }
+
+        // vy
+        for (let i = 0; i < this.height - 1; i++) {
+            for (let j = 1; j < this.width - 1; j++) {
+                let grad_p_y = (this.p[i + 1][j] - this.p[i][j]) / dx
                 this.vy[i][j] = (-1 / RHO * dt * grad_p_y + this.vy[i][j]) / (1 + this.damping[i][j]);
             }
         }
     }
 
     colorCell(i, j, choice) {
-        this.color[i][j] = choice;
+        // can take in [R, G, B] or color name
+        const color = getColor(choice);
+        this.color[i][j] = color;
     }
 
     mapPressure() {
         for (let i = 1; i < this.height - 1; i++) {
             for (let j = 1; j < this.width - 1; j++) {
-                if (!this.geometry[i][j]) {
+                if (!this.geometry[i][j] && i != mouseI && j != mouseJ) {
                     this.colorCell(i, j, pressureToColor(this.p[i][j]));
                 }
             }
@@ -86,10 +92,9 @@ class Grid {
     }
 
     drawInstrument(i, j) {
-        const white = [1, 1, 1];
         if (i >= 0 && i < this.height && j >= 0 && j < this.width) {
             this.geometry[i][j] = true;
-            this.colorCell(i, j, white);
+            this.colorCell(i, j, "white");
         }
 
         // push to moves queue
@@ -99,16 +104,38 @@ class Grid {
     }
 
     drawAir(i, j) {
-        const black = [0, 0, 0];
-        this.colorCell(i, j, black);
+        this.colorCell(i, j, "black");
         this.geometry[i][j] = false;
     }
 
-    step() {
-        this.getDamping(pmlThicknessInstrument);
-        this.stepVelocity();
-        this.stepPressure();
-        this.frame++;
+    drawToneholes(i, j) {
+        if (this.geometry[i][j]) {
+            this.colorCell(i, j, "orange");
+        }
+    }
+
+    toggleTonehole(num) {
+        const hole = scene.toneholes[num - 1];
+        hole.open = !hole.open;
+        console.log(scene.toneholes);
+
+        // if tonehole is opened
+        if (hole.open) {
+            for (let j = 0; j <= hole.length; j++) {
+                this.drawAir(hole.i, hole.j + j);
+                this.drawInstrument(hole.i - 2, hole.j + j);
+            }
+        }
+
+        // if tonehole is closed
+        else if (!hole.open) {
+            for (let j = 0; j <= hole.length; j++) {
+                this.drawInstrument(hole.i, hole.j + j);
+                this.drawAir(hole.i - 2, hole.j + j);
+                this.colorCell(hole.i, hole.j + j, "orange");
+                
+            }
+        }
     }
 
     getDamping(thickness) {
@@ -138,9 +165,83 @@ class Grid {
         }
     }
 
+    applyMonopole(i, j) {
+        this.p[i][j] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
+    }
+
+    applyDipole(i1, j1, i2, j2) {
+        this.p[i1][j1] = -amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
+        this.p[i2][j2] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
+    }
+    
+    applyClarinet(i, j) {
+        // mouth pressure pm, bore pressure bp
+        // jet width wj
+        // reed gap E [0, hr] (where hr is resting aperture)
+        // reed elasticity kr
+
+        let pb = this.p[i][j + 2];
+        let wj = 1.2 * 10**(-2);
+        let hr = 6 * 10**(-4);
+        const kr = 8 * 10**(6);
+
+        // the smaller deltaP, the greater the reed gap
+        let deltaP = pm - pb;
+
+        //if (deltaP < 0) { deltaP = 0; }
+        //console.log("delta p", deltaP);
+
+        // pressure difference at which reed gap = 0
+        const deltaPMax = kr * hr;
+        //console.log("delta p max", deltaPMax);
+
+        // reed aperture factor E [0, 1]: factor = 0 -> reed fully closed
+        let gapFactor = (1 - (deltaP / deltaPMax));
+        //console.log("gap factor", gapFactor);
+
+        // particle velocity due to steady-state Bernoulli equation (incompressible flow assumed)
+        const vp = (2 * deltaP / RHO) ** (1/2);
+
+        // calculate volume flow into bore ub to find velocity of bore cells vb
+        let ub = wj * hr * gapFactor * vp;
+
+        // let vb = ub / H / dx / (number of drawn excitation cells?)
+        let vb = ub / (0.025 * dx * source.height);
+    
+        for (let n = 0; n < source.height; n++) {
+            this.vx[i + n][j] = 1;
+            this.geometry[i + n][j] = true;
+        }
+    }
+
+    crossHatch(mouseI, mouseJ) {
+        // why doesnt this stop when hatch is false ?????????
+        for (let i = pmlThicknessBoundary; i < gridHeight - pmlThicknessBoundary; i++) {
+            if (!this.geometry[i][mouseJ]) {
+                this.colorCell(i, mouseJ, "gray");
+            }
+            
+        }
+
+        for (let j = pmlThicknessBoundary; j < gridWidth - pmlThicknessBoundary; j++) {
+            if (!this.geometry[mouseI][j]) {
+                this.colorCell(mouseI, j, "gray");
+            }
+        }
+    }
+
+    colorConstants(mic, source) {
+        // color mic and source
+        this.colorCell(mic.i, mic.j, "green");
+        for (let n = 0; n < source.height; n++) {
+            this.colorCell(source.i + n, source.j, "yellow");
+        }
+    }
+
     reset() {
         const newScene = new Grid(gridHeight, gridWidth);
         scene = newScene;
+        clarinet();
     }
 }
 
@@ -222,16 +323,29 @@ function getVertices(coordinates, color, grid) {
 function initializeGridValues(grid) {
     const height = grid.height;
     const width = grid.width;
+
+    // n x m pressure grid
     let p = [];
-    let vx = [];
-    let vy = [];
     for (let i = 0; i < height; i++) {
         p[i] = [];
-        vx[i] = [];
-        vy[i] = [];
         for (let j = 0; j < width; j++) {
             p[i][j] = 0;
+        }
+    }
+
+    // staggered grid: n x (m + 1) vx grid, and an
+    let vx = [];
+    for (let i = 0; i < height; i++) {
+        vx[i] = [];
+        for (let j = 0; j < width + 1; j++) {
             vx[i][j] = 0;
+        }
+    }
+    // (n + 1) x m vy grid
+    let vy = [];
+    for (let i = 0; i < height + 1; i++) {
+        vy[i] = [];
+        for (let j = 0; j < width; j++) {
             vy[i][j] = 0;
         }
     }
@@ -248,6 +362,7 @@ function initializeGridValues(grid) {
 function initializeGeometry(grid) {
     const height = grid.height;
     const width = grid.width;
+
     // 2d array of booleans: true indicates solid cell, false indicates air cell
     let geometry = [];
     for (let i = 0; i < height; i++) {
