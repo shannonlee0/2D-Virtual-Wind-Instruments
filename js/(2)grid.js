@@ -1,16 +1,14 @@
-//
-
 // resolution 1 is 110 x 220
 const resolution = 1;
-const gridHeight = 110 * resolution;
+const gridHeight = 220 * resolution;
 const gridWidth = 2 * gridHeight;
 
-const C = 343.2;
-const RHO = 1.2;
-const dt = 0.00000781
+const C = 347.23;
+const RHO = 1.176;
+const dt = 0.00000644679;
 const dx = 0.00383;
 
-const pmlThicknessBoundary = 10 * resolution;
+const pmlThicknessBoundary = 8 * resolution;
 const pmlThicknessInstrument = 0;
 
 class Grid {
@@ -34,7 +32,7 @@ class Grid {
 
         // set up damping coefficients
         this.damping = initializeDamping(this);
-        this.getDamping(pmlThicknessBoundary);
+        this.dampBoundary(this);
 
         // array of {key=i: value=leftmost i-coord, key=j: value=leftmost j-coord, key=length, value=length of tonehole}
         this.toneholes = [];
@@ -60,18 +58,21 @@ class Grid {
         // vx
         for (let i = 1; i < this.height - 1; i++) {
             for (let j = 0; j < this.width - 1; j++) {
-                // ?
-                let grad_p_x = (this.p[i][j + 1] - this.p[i][j]) / dx
-                this.vx[i][j] = (-1 / RHO * dt * grad_p_x + this.vx[i][j]) / (1 + this.damping[i][j]);
+                if (!this.geometry[i][j] && !this.geometry[i][j + 1]) {
+                    let grad_p_x = (this.p[i][j + 1] - this.p[i][j]) / dx
+                    this.vx[i][j] = (-1 / RHO * dt * grad_p_x + this.vx[i][j]) / (1 + this.damping[i][j]);
+                }
             }
         }
 
         // vy
         for (let i = 0; i < this.height - 1; i++) {
             for (let j = 1; j < this.width - 1; j++) {
-                let grad_p_y = (this.p[i + 1][j] - this.p[i][j]) / dx
-                this.vy[i][j] = (-1 / RHO * dt * grad_p_y + this.vy[i][j]) / (1 + this.damping[i][j]);
-            }
+                if (!this.geometry[i][j] && !this.geometry[i + 1][j]) {
+                    let grad_p_y = (this.p[i + 1][j] - this.p[i][j]) / dx
+                    this.vy[i][j] = (-1 / RHO * dt * grad_p_y + this.vy[i][j]) / (1 + this.damping[i][j]);
+                }
+            }    
         }
     }
 
@@ -84,8 +85,18 @@ class Grid {
     mapPressure() {
         for (let i = 1; i < this.height - 1; i++) {
             for (let j = 1; j < this.width - 1; j++) {
-                if (!this.geometry[i][j] && i != mouseI && j != mouseJ) {
+                if (!this.geometry[i][j]) {
                     this.colorCell(i, j, pressureToColor(this.p[i][j]));
+                }
+            }
+        }
+    }
+
+    mapPML() {
+        for (let i = 1; i < this.height - 1; i++) {
+            for (let j = 1; j < this.width - 1; j++) {
+                if (this.damping[i][j] > 0) {
+                    this.colorCell(i, j, pmlToColor(this.damping[i][j]));
                 }
             }
         }
@@ -112,18 +123,21 @@ class Grid {
         if (this.geometry[i][j]) {
             this.colorCell(i, j, "orange");
         }
+
+        if (moves.length == 0 || moves[moves.length - 1][0] != i || moves[moves.length - 1][1] != j) {
+            moves.push([i, j]);
+        }
     }
 
     toggleTonehole(num) {
         const hole = scene.toneholes[num - 1];
         hole.open = !hole.open;
-        console.log(scene.toneholes);
 
         // if tonehole is opened
         if (hole.open) {
             for (let j = 0; j <= hole.length; j++) {
                 this.drawAir(hole.i, hole.j + j);
-                this.drawInstrument(hole.i - 2, hole.j + j);
+                this.colorCell(hole.i-1, hole.j + j, "grey");
             }
         }
 
@@ -131,19 +145,7 @@ class Grid {
         else if (!hole.open) {
             for (let j = 0; j <= hole.length; j++) {
                 this.drawInstrument(hole.i, hole.j + j);
-                this.drawAir(hole.i - 2, hole.j + j);
                 this.colorCell(hole.i, hole.j + j, "orange");
-                
-            }
-        }
-    }
-
-    getDamping(thickness) {
-        for (let i = 0; i < this.height; i++) {
-            for (let j = 0; j < this.width; j++) {
-                if (this.geometry[i][j] == true) {
-                    this.getSigmas(i, j, thickness);
-                }
             }
         }
     }
@@ -158,8 +160,8 @@ class Grid {
                 const trueIndexJ = instrumentJ - thickness + j;
                 // get label that indicates closeness to outer boundary [0, 1, ..., 1, 0]
                 // add one, then multiply by step
-                if ((trueIndexI >= 0 && trueIndexI < this.height) && (trueIndexJ >= 0 && trueIndexJ < this.width)) {
-                    this.damping[trueIndexI][trueIndexJ] = Math.max(step * Math.min(getLabel(i, thickness) + 1, getLabel(j, thickness) + 1), this.damping[trueIndexI][trueIndexJ]);
+                if ((trueIndexI > 0 && trueIndexI < this.height - 1) && (trueIndexJ > 0 && trueIndexJ < this.width - 1)) {
+                    this.damping[trueIndexI][trueIndexJ] = Math.max(0.5 * step * Math.min(getLabel(i, thickness) + 1, getLabel(j, thickness) + 1), this.damping[trueIndexI][trueIndexJ]);
                 }
             }
         }
@@ -180,15 +182,16 @@ class Grid {
         // reed gap E [0, hr] (where hr is resting aperture)
         // reed elasticity kr
 
-        let pb = this.p[i][j + 2];
-        let wj = 1.2 * 10**(-2);
-        let hr = 6 * 10**(-4);
+        let pb = this.p[i + Math.trunc(source.height / 2)][j + 2];
+
+        const wj = 1.2 * 10**(-2);
+        const hr = 6 * 10**(-4);
         const kr = 8 * 10**(6);
 
         // the smaller deltaP, the greater the reed gap
         let deltaP = pm - pb;
 
-        //if (deltaP < 0) { deltaP = 0; }
+        if (deltaP < 0) { deltaP = 0; }
         //console.log("delta p", deltaP);
 
         // pressure difference at which reed gap = 0
@@ -200,41 +203,48 @@ class Grid {
         //console.log("gap factor", gapFactor);
 
         // particle velocity due to steady-state Bernoulli equation (incompressible flow assumed)
-        const vp = (2 * deltaP / RHO) ** (1/2);
+        let vp = (2 * deltaP / RHO) ** (1/2);
 
         // calculate volume flow into bore ub to find velocity of bore cells vb
         let ub = wj * hr * gapFactor * vp;
-
+    
         // let vb = ub / H / dx / (number of drawn excitation cells?)
         let vb = ub / (0.025 * dx * source.height);
+
+        // vb oscillates consistently, no explosion
+        //console.log("vb", vb);
     
         for (let n = 0; n < source.height; n++) {
-            this.vx[i + n][j] = 1;
+            this.vx[i + n][j] = vb;
             this.geometry[i + n][j] = true;
         }
     }
 
-    crossHatch(mouseI, mouseJ) {
-        // why doesnt this stop when hatch is false ?????????
-        for (let i = pmlThicknessBoundary; i < gridHeight - pmlThicknessBoundary; i++) {
-            if (!this.geometry[i][mouseJ]) {
-                this.colorCell(i, mouseJ, "gray");
-            }
-            
-        }
-
-        for (let j = pmlThicknessBoundary; j < gridWidth - pmlThicknessBoundary; j++) {
-            if (!this.geometry[mouseI][j]) {
-                this.colorCell(mouseI, j, "gray");
-            }
-        }
-    }
-
-    colorConstants(mic, source) {
+    colorConstants(mic, source, toneholes) {
         // color mic and source
         this.colorCell(mic.i, mic.j, "green");
         for (let n = 0; n < source.height; n++) {
             this.colorCell(source.i + n, source.j, "yellow");
+        }
+        for (let n = 0; n < toneholes.length; n++) {
+            if (toneholes[n].open) {
+                for (let k = 0; k <= toneholes[n].length; k++) {
+                    this.colorCell(toneholes[n].i - 1, toneholes[n].j + k, "grey");
+                }
+            }    
+        }
+    }
+
+    dampBoundary(grid) {
+        const height = grid.height;
+        const width = grid.width;
+        for (let i = 0; i < height; i++) {
+            for (let j = 0; j < width; j++) {
+                // if on boundary
+                if (i == 0 || i == height - 1 || j == 0 || j == width - 1) {
+                    this.getSigmas(i, j, pmlThicknessBoundary);
+                }
+            }
         }
     }
 
@@ -368,13 +378,7 @@ function initializeGeometry(grid) {
     for (let i = 0; i < height; i++) {
         geometry[i] = [];
         for (let j = 0; j < width; j++) {
-            // make boundary "instrument" for damping purposes
-            if (i == 0 || i == height - 1 || j == 0 || j == width - 1) {
-                geometry[i][j] = true;
-            }
-            else {
-                geometry[i][j] = false;
-            }
+            geometry[i][j] = false;
         }
     }
     return geometry;
@@ -383,12 +387,14 @@ function initializeGeometry(grid) {
 function initializeDamping(grid) {
     const height = grid.height;
     const width = grid.width;
-    let sigma = [];
+
+    // 2d array of booleans: true indicates solid cell, false indicates air cell
+    let damping = [];
     for (let i = 0; i < height; i++) {
-        sigma[i] = [];
+        damping[i] = [];
         for (let j = 0; j < width; j++) {
-            sigma[i][j] = 0;
+            damping[i][j] = 0;
         }
     }
-    return sigma;
+    return damping;
 }

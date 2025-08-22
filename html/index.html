@@ -20,11 +20,12 @@
         <button type="button" id="resetButton" onclick="scene.reset();">reset (enter)</button>
         <script src="../js/(3)scene.js"></script>
         <script src="../js/(4)renderer.js"></script>
-        <input type="range" min="0" max="5" value="1" step="0.2" class="slider" id="ampSlider">amplitude</input>
-        <input type="range" min="200" max="700" value="440" step="10" class="slider" id="freqSlider">frequency</input>
-        <input type="range" min="0" max="5000" value="3000" step="10" class="slider" id="pmSlider">mouth pressure</input>
+        <!-- <input type="range" min="0" max="5" value="1" step="0.2" class="slider" id="ampSlider">amplitude</input>
+        <input type="range" min="200" max="700" value="440" step="10" class="slider" id="freqSlider">frequency</input> -->
+        <input type="range" min="0" max="4000" value="pm" step="800" class="slider" id="pmSlider">mouth pressure</input>
         <script src="../js/(5)input.js"></script>
-        <script>clarinet(); update();</script>
+        <button type="checkbox" id="visualizePML" onclick="visualizePML = !visualizePML;">see pml</button>
+        <script>clarinet(); update(); console.log("pm", pm);</script>
         <script src="../js/(6)audio.js"></script>
         <button type="button" id="audioButton" onclick="toggleAudio();">play audio</button>
         

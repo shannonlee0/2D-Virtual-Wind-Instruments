@@ -4,19 +4,21 @@ let draggingSource = false;
 let hatch = false;
 let draggingToneholes = false;
 
+let visualizePML = false;
+
 let mouseI = 0;
 let mouseJ = 0;
 let length = 0;
 
-const ampSlider = document.getElementById("ampSlider");
-ampSlider.addEventListener("input", () => {
-    amp = ampSlider.value;
-})
+// const ampSlider = document.getElementById("ampSlider");
+// ampSlider.addEventListener("input", () => {
+//     amp = ampSlider.value;
+// })
 
-const freqSlider = document.getElementById("freqSlider");
-freqSlider.addEventListener("input", () => {
-    freq = freqSlider.value;
-})
+// const freqSlider = document.getElementById("freqSlider");
+// freqSlider.addEventListener("input", () => {
+//     freq = freqSlider.value;
+// })
 
 const pmSlider = document.getElementById("pmSlider");
 pmSlider.addEventListener("input", () => {
@@ -43,7 +45,7 @@ canvas.addEventListener("keydown", function (event) {
 
     // cross-hatch
     if (event.code == "KeyF") {
-        hatch = !hatch;
+        //hatch = !hatch;
     }
 
     // toggle toneholes
@@ -108,7 +110,7 @@ canvas.addEventListener("mousemove", function (event) {
         }
     }
     else if (hatch) {
-        scene.crossHatch(mouseI, mouseJ);
+        crossHatch(mouseI, mouseJ, scene);
     }
 });
 

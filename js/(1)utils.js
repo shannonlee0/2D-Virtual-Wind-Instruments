@@ -81,12 +81,20 @@ function horizontalCoords(grid) {
 function pressureToColor(pressure) {
     // given pressure, normalize st beta E [-1, 1]
     // i dont know what pmax should be
-    const pmax = 1;
+    const pmax = 20;
     const beta = pressure / pmax;
     if (beta <= 0) {
         return [0, 0, -beta];
     }
     return [beta, 0, 0];
+}
+
+function pmlToColor(sigma) {
+    // given pressure, normalize st beta E [-1, 1]
+    // i dont know what pmax should be
+    const sigmaMax = 10;
+    const beta = sigma / sigmaMax;
+    return [0, sigma, 0];
 }
 
 function getLabel(index, thickness) {
@@ -103,7 +111,7 @@ function writeMicValues(length) {
 
         const link = document.createElement("a");
         link.href = url;
-        link.download = "micValues.txt";
+        link.download = "newmicvalues.txt";
         link.click();
     }
 }
@@ -121,17 +129,33 @@ function getColor(choice) {
             color = [1, 1, 0];
             break;
         case "orange":
-            color = [1, 0.8, 0];
+            color = [1, 0.6, 0];
             break;
         case "green":
             color = [0, 1, 0];
             break;
         case "grey":
-            color = [0.1, 0.1, 0.1];
+            color = [0.6, 0.6, 0.6];
             break;
         default:
             color = choice;
             break;
     }
     return color;
+}
+
+function crossHatch(mouseI, mouseJ, grid) {
+    console.log("doing now");
+    // why doesnt this stop when hatch is false ?????????
+    for (let i = pmlThicknessBoundary; i < grid.height - pmlThicknessBoundary; i++) {
+        if (!grid.geometry[i][mouseJ]) {
+            grid.colorCell(i, mouseJ, "grey");
+        }
+    }
+
+    for (let j = pmlThicknessBoundary; j < grid.width - pmlThicknessBoundary; j++) {
+        if (!grid.geometry[mouseI][j]) {
+            grid.colorCell(mouseI, j, "grey");
+        }
+    }
 }

@@ -115,7 +115,7 @@ function draw() {
         gl.FLOAT,
         gl.FALSE,
         5 * Float32Array.BYTES_PER_ELEMENT,
-        2 * Float32Array.BYTES_PER_ELEMENT,
+        2 * Float32Array.BYTES_PER_ELEMENT
     )
 
     gl.enableVertexAttribArray(positionAttribLocation);
