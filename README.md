@@ -18,10 +18,10 @@ Simulating acoustic wave propagation can aid in the exploration of novel musical
 
 ## Features
 
-* **Interactive Instrument Design:** Draw custom 2D instrument geometries and boundaries directly in the browser.
+* **Interactive Instrument Design:** Draw custom 2D instrument geometries and boundaries directly in the browser, and toggle toneholes.
 * **Real-time Wave Visualization:** See the acoustic pressure wave propagate through your instrument design with a dynamic color map powered by **WebGL**.
-* **Dynamic Audio Synthesis:** Hear the sound your instrument makes in real-time, with audio generated directly from the wave simulation data.
-* **Customizable Source Models:** Choose a clarinet (single air jet model) or a recorder (air jet with labium) blowing into instruments of different timbres.
+* **Dynamic Audio Synthesis:** Hear the sound your instrument makes with audio generated directly from the wave simulation data.
+* **Customizable Source Models:** Choose a clarinet (single air jet model) or a recorder (air jet with labium) to simulate blowing into instruments of different timbres.
 
 ## How to Run Locally
 
