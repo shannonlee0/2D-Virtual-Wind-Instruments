@@ -1,6 +1,6 @@
 // resolution 1 is 110 x 220
-const resolution = 1;
-const gridHeight = 220 * resolution;
+const resolution = 1.5;
+const gridHeight = 110 * resolution;
 const gridWidth = 2 * gridHeight;
 
 const C = 347.23;
@@ -8,7 +8,7 @@ const RHO = 1.176;
 const dt = 0.00000644679;
 const dx = 0.00383;
 
-const pmlThicknessBoundary = 8 * resolution;
+const pmlThicknessBoundary = 0 * resolution;
 const pmlThicknessInstrument = 0;
 
 class Grid {
@@ -34,11 +34,24 @@ class Grid {
         this.damping = initializeDamping(this);
         this.dampBoundary(this);
 
-        // array of {key=i: value=leftmost i-coord, key=j: value=leftmost j-coord, key=length, value=length of tonehole}
-        this.toneholes = [];
-
         this.play = false;
         this.frame = 0;
+
+        const nx = this.width;
+        const ny = this.height;
+
+        const a = 0.8;              // amplitude
+        const sigma = nx / 10;      // width (adjust as needed)
+        const x0 = nx / 2;
+        const y0 = ny / 2;
+
+        for (let i = 0; i < ny; i++) {
+            for (let j = 0; j < nx; j++) {
+                let dx = j - x0;
+                let dy = i - y0;
+                this.p[i][j] = a * Math.exp(-(dx*dx + dy*dy) / (2 * sigma * sigma));
+            }
+        }
     }
 
     stepPressure() {
@@ -119,37 +132,6 @@ class Grid {
         this.geometry[i][j] = false;
     }
 
-    drawToneholes(i, j) {
-        if (this.geometry[i][j]) {
-            this.colorCell(i, j, "orange");
-        }
-
-        if (moves.length == 0 || moves[moves.length - 1][0] != i || moves[moves.length - 1][1] != j) {
-            moves.push([i, j]);
-        }
-    }
-
-    toggleTonehole(num) {
-        const hole = scene.toneholes[num - 1];
-        hole.open = !hole.open;
-
-        // if tonehole is opened
-        if (hole.open) {
-            for (let j = 0; j <= hole.length; j++) {
-                this.drawAir(hole.i, hole.j + j);
-                this.colorCell(hole.i-1, hole.j + j, "grey");
-            }
-        }
-
-        // if tonehole is closed
-        else if (!hole.open) {
-            for (let j = 0; j <= hole.length; j++) {
-                this.drawInstrument(hole.i, hole.j + j);
-                this.colorCell(hole.i, hole.j + j, "orange");
-            }
-        }
-    }
-
     getSigmas(instrumentI, instrumentJ, thickness) {
         // given an instrument cell ij, check every cell located in range of thickness
         // directly edit damping field
@@ -167,62 +149,9 @@ class Grid {
         }
     }
 
-    applyMonopole(i, j) {
-        this.p[i][j] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
-    }
-
-    applyDipole(i1, j1, i2, j2) {
-        this.p[i1][j1] = -amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
-        this.p[i2][j2] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
-    }
-    
-    applyClarinet(i, j) {
-        // mouth pressure pm, bore pressure bp
-        // jet width wj
-        // reed gap E [0, hr] (where hr is resting aperture)
-        // reed elasticity kr
-
-        let pb = this.p[i + Math.trunc(source.height / 2)][j + 2];
-
-        const wj = 1.2 * 10**(-2);
-        const hr = 6 * 10**(-4);
-        const kr = 8 * 10**(6);
-
-        // the smaller deltaP, the greater the reed gap
-        let deltaP = pm - pb;
-
-        if (deltaP < 0) { deltaP = 0; }
-        //console.log("delta p", deltaP);
-
-        // pressure difference at which reed gap = 0
-        const deltaPMax = kr * hr;
-        //console.log("delta p max", deltaPMax);
-
-        // reed aperture factor E [0, 1]: factor = 0 -> reed fully closed
-        let gapFactor = (1 - (deltaP / deltaPMax));
-        //console.log("gap factor", gapFactor);
-
-        // particle velocity due to steady-state Bernoulli equation (incompressible flow assumed)
-        let vp = (2 * deltaP / RHO) ** (1/2);
-
-        // calculate volume flow into bore ub to find velocity of bore cells vb
-        let ub = wj * hr * gapFactor * vp;
-    
-        // let vb = ub / H / dx / (number of drawn excitation cells?)
-        let vb = ub / (0.025 * dx * source.height);
-
-        // vb oscillates consistently, no explosion
-        //console.log("vb", vb);
-    
-        for (let n = 0; n < source.height; n++) {
-            this.vx[i + n][j] = vb;
-            this.geometry[i + n][j] = true;
-        }
-    }
-
     colorConstants(mic, source, toneholes) {
         // color mic and source
-        this.colorCell(mic.i, mic.j, "green");
+        //this.colorCell(mic.i, mic.j, "green");
         for (let n = 0; n < source.height; n++) {
             this.colorCell(source.i + n, source.j, "yellow");
         }
@@ -248,12 +177,21 @@ class Grid {
         }
     }
 
+    applyDipole(i1, j1, i2, j2) {
+        this.p[i1][j1] = -amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
+        this.p[i2][j2] = amp * Math.sin(scene.frame * dt * (2*Math.PI) * freq);
+    }
+
     reset() {
         const newScene = new Grid(gridHeight, gridWidth);
         scene = newScene;
-        clarinet();
+        const newInstrument = new Blank();
+        instrument = newInstrument;
     }
 }
+
+// for grid setup
+// i think these should be class methods
 
 function calculateGridVertices(vCoords, hCoords, grid) {
     const height = grid.height;
@@ -388,7 +326,6 @@ function initializeDamping(grid) {
     const height = grid.height;
     const width = grid.width;
 
-    // 2d array of booleans: true indicates solid cell, false indicates air cell
     let damping = [];
     for (let i = 0; i < height; i++) {
         damping[i] = [];

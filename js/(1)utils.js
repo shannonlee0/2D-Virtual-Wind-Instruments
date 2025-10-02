@@ -81,8 +81,7 @@ function horizontalCoords(grid) {
 function pressureToColor(pressure) {
     // given pressure, normalize st beta E [-1, 1]
     // i dont know what pmax should be
-    const pmax = 20;
-    const beta = pressure / pmax;
+    const beta = pressure / instrument.pmax;
     if (beta <= 0) {
         return [0, 0, -beta];
     }
@@ -105,7 +104,7 @@ function getLabel(index, thickness) {
 function writeMicValues(length) {
     // writes mic values as a .txt file to feed into write_wav.py
     if (scene.frame == length) {
-        const text = (1 / dt) + "\n" + micValues.join("\n");
+        const text = (1 / dt) + "\n" + mic.values.join("\n");
         const blob = new Blob([text], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
 
