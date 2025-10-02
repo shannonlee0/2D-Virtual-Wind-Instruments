@@ -9,7 +9,7 @@ let scene = new Grid(gridHeight, gridWidth);
 
 // re-render every n = numSteps steps
 const numSteps = 1;
-
+let numVals = 100000;
 
 // microphone location
 let mic = {
@@ -42,13 +42,14 @@ function simulate() {
         scene.stepVelocity();
         
         // source
-        //instrument.applySource();
+        instrument.applySource();
         
         // listener
         mic.values.push(scene.p[mic.i][mic.j]);
         scene.frame++
     }
-    writeMicValues(100000);
+    writeMicValues(numVals);
+    console.log(numVals);
 }
 
 function update() {

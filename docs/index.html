@@ -19,13 +19,17 @@
         <script src="js/(4)instruments.js"></script>
         <script src="js/(5)renderer.js"></script>
         <script src="js/(6)input.js"></script>
-        <button type="button" id="playButton" onclick="scene.play = !scene.play">play (space)</button>
-        <button type="button" id="resetButton" onclick="scene.reset();">reset (enter)</button>
-        <button type="checkbox" id="visualizePML" onclick="visualizePML = !visualizePML;">see pml</button>
-        <script>let instrument = new Monopole();</script>
-        <button type="button" id="clarinet" onclick="instrument = new Clarinet();">Clarinet</button>
-        <button type="button" id="recorder" onclick="instrument = new Recorder();">Recorder</button>
-        <script>update();</script>
+        <button type="button" id="playButton" onclick="scene.play = !scene.play">Play (space)</button>
+        <button type="button" id="resetButton" onclick="scene.reset();">Blank (enter)</button>
+        <button type="button" id="visualizePML" onclick="visualizePML = !visualizePML;">Visualize PML</button>
+        <button type="button" id="clarinet" onclick="scene.reset(); instrument = new Clarinet();">Clarinet</button>
+        <button type="button" id="recorder" onclick="scene.reset(); instrument = new Recorder();">Recorder</button>
+        <script>let instrument = new Clarinet(); update();</script>
+        <text>Drag mouse on canvas to draw instrument geometry. To undo, press z. 
+            Draw toneholes by holding shift and dragging mouse on instrument geometry. 
+            Toggle toneholes by pressing the number keys - number corresponds to the order the relative tonehole was drawn in. 
+            Drag and drop yellow source.
+            Downloads pressure values in form of .txt file after 100000 frames.</text>
         
         
     </body>

@@ -8,7 +8,7 @@ const RHO = 1.176;
 const dt = 0.00000644679;
 const dx = 0.00383;
 
-const pmlThicknessBoundary = 0 * resolution;
+const pmlThicknessBoundary = 8 * resolution;
 const pmlThicknessInstrument = 0;
 
 class Grid {
@@ -185,8 +185,8 @@ class Grid {
     reset() {
         const newScene = new Grid(gridHeight, gridWidth);
         scene = newScene;
-        const newInstrument = new Blank();
-        instrument = newInstrument;
+        //const newInstrument = new Blank();
+        //instrument = newInstrument;
     }
 }
 

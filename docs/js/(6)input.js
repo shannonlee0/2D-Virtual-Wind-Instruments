@@ -10,25 +10,6 @@ let mouseI = 0;
 let mouseJ = 0;
 let length = 0;
 
-/* When the user clicks on the button,
-toggle between hiding and showing the dropdown content */
-function myFunction() {
-  document.getElementById("myDropdown").classList.toggle("show");
-}
-
-// Close the dropdown menu if the user clicks outside of it
-window.onclick = function(event) {
-  if (!event.target.matches('.dropbtn')) {
-    var dropdowns = document.getElementsByClassName("dropdown-content");
-    var i;
-    for (i = 0; i < dropdowns.length; i++) {
-      var openDropdown = dropdowns[i];
-      if (openDropdown.classList.contains('show')) {
-        openDropdown.classList.remove('show');
-      }
-    }
-  }
-}
 
 // const ampSlider = document.getElementById("ampSlider");
 // ampSlider.addEventListener("input", () => {
@@ -44,6 +25,11 @@ window.onclick = function(event) {
 // pmSlider.addEventListener("input", () => {
 //     pm = pmSlider.value;
 //     console.log("pm:", pm);
+// })
+
+// const numValsSlider = document.getElementById("numValsSlider");
+// numValsSlider.addEventListener("input", () => {
+//     numVals = parseInt(numValsSlider.value);
 // })
 
 canvas.addEventListener("keydown", function (event) {

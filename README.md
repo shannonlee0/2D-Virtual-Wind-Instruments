@@ -23,6 +23,14 @@ Simulating acoustic wave propagation can aid in the exploration of novel musical
 * **Dynamic Audio Synthesis:** Audio data is generated directly from the wave simulation data into .txt file, which can be converted into a .wav file.
 * **Customizable Source Models:** Choose a clarinet (single air jet model) or a recorder (air jet with labium) to simulate blowing into instruments of different timbres.
 
+**Instructions:**
+* Drag mouse on canvas to draw instrument geometry. 
+* To undo, press z. 
+* Draw toneholes by holding shift and dragging mouse on instrument geometry. 
+* Toggle toneholes by pressing the number keys - number corresponds to the order the relative tonehole was drawn in. 
+* Drag and drop yellow source.
+* Downloads pressure values in form of .txt file after 100000 frames.
+
 ## How to Run Locally
 
 To run this project on your local machine:
