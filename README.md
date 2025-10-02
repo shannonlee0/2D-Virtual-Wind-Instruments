@@ -1,4 +1,4 @@
-# Aerophones: A 2D Virtual Wind Instrument Simulator
+# 2D Virtual Wind Instrument Simulator
 
 Simulating acoustic wave propagation can aid in the exploration of novel musical instrument designs. This project is a 2D wave simulator that, given user-drawn instrument geometry and dynamic source models, visualizes pressure over time and generates realistic audio.
 
