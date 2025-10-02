@@ -22,8 +22,11 @@
         <button type="button" id="playButton" onclick="scene.play = !scene.play">play (space)</button>
         <button type="button" id="resetButton" onclick="scene.reset();">reset (enter)</button>
         <button type="checkbox" id="visualizePML" onclick="visualizePML = !visualizePML;">see pml</button>
-        <button type="button" id="clarinet" onclick="let instrument = new Monopole(); update();">reset (enter)</button>
-        <button type="button" id="recorder" onclick="scene.reset();">reset (enter)</button>
+        <script>let instrument = new Monopole();</script>
+        <button type="button" id="clarinet" onclick="instrument = new Clarinet();">Clarinet</button>
+        <button type="button" id="recorder" onclick="instrument = new Recorder();">Recorder</button>
+        <script>update();</script>
+        
         
     </body>
 </html>
