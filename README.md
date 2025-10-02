@@ -11,4 +11,4 @@ tech stack
 
 features
 
-how to run locally
+how to run logac
