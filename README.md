@@ -6,7 +6,7 @@ Simulating acoustic wave propagation can aid in the exploration of novel musical
 
 ---
 
-*[It is highly recommended to add a screenshot or, even better, a short GIF here of the simulator in action!]*
+![Demo of the instrument simulator](./assets/giphy.mp4)
 
 ---
 
